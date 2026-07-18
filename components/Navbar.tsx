@@ -40,7 +40,7 @@ export default function Navbar() {
     { name: "Home", url: "/" },
     { name: "Gallery", url: "/gallery" },
     { name: "About", url: "/about" },
-    ...(!session ? [{ name: "Join Club", url: "/signup" }] : []),
+    ...(!session ? [{ name: "Join Club", url: "/signin" }] : []),
     ...(session ? [{ name: "Membership", url: "/membership" }] : []), // Changed to /membership (assuming logged-in users shouldn't go to /signup)
   ];
 

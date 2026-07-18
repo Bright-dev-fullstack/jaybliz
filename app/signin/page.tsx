@@ -103,7 +103,7 @@ export default async function SignUp() {
           </div>
 
           {/* Password Input */}
-          <div>
+          {/* <div>
             <label className="block text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">
               Password
             </label>
@@ -114,7 +114,7 @@ export default async function SignUp() {
               placeholder="••••••••"
               className="w-full bg-stone-950 border border-stone-800 focus:border-amber-400 px-4 py-3 text-stone-200 placeholder-stone-600 text-sm rounded-none focus:outline-none transition duration-200"
             />
-          </div>
+          </div> */}
 
           {/* Terms Agreement Checkbox */}
           <div className="flex items-start gap-3 pt-2">
@@ -134,14 +134,14 @@ export default async function SignUp() {
             type="submit"
             className="w-full bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold py-3.5 px-4 transition duration-300 uppercase tracking-widest text-xs mt-4"
           >
-            Create Account
+            Acces Account
           </button>
         </form>
 
         {/* Existing User Redirect Link */}
         <p className="text-center text-xs text-stone-500 font-light mt-8">
           Already have an account?{" "}
-          <Link href="/login" className="text-amber-400 hover:underline font-normal">
+          <Link href="/signin" className="text-amber-400 hover:underline font-normal">
             Log In
           </Link>
         </p>

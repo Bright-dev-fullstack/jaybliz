@@ -19,4 +19,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       privateKey: process.env.AUTH_FIREBASE_PRIVATE_KEY,
     }),
   }),
+
+  
 })
