@@ -7,6 +7,7 @@ import { collection, query, where, getDocs, doc, updateDoc } from "firebase/fire
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/config/firebase"; // Make sure storage is exported from here
 
+
 export default function MembershipDashboard({ session }: { session: any }) {
   const [loading, setLoading] = useState(true);
   const [upcomingServices, setUpcomingServices] = useState<any[]>([]);
@@ -40,7 +41,7 @@ export default function MembershipDashboard({ session }: { session: any }) {
       const history: any[] = [];
 
       querySnapshot.forEach((doc) => {
-        const data = { id: doc.id, ...doc.data() };
+        const data:any = { id: doc.id, ...doc.data() };
         if (data.status === "Completed") {
           history.push(data);
         } else {
