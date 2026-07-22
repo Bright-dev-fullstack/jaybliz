@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { FiCalendar, FiClock, FiStar, FiAward, FiMapPin, FiChevronRight, FiUpload, FiX, FiCheckCircle } from "react-icons/fi";
-import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import { FiCalendar, FiClock, FiStar, FiAward, FiMapPin, FiChevronRight, FiUpload, FiX, FiCheckCircle, FiInfo } from "react-icons/fi";
+import { collection, query, where, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/config/firebase"; // Make sure storage is exported from here
-
+import { db, storage } from "@/config/firebase"; 
 
 export default function MembershipDashboard({ session }: { session: any }) {
   const [loading, setLoading] = useState(true);
@@ -23,47 +22,49 @@ export default function MembershipDashboard({ session }: { session: any }) {
   const points = totalVisits * 100;
   const currentTier = totalVisits >= 10 ? "Elite" : totalVisits >= 5 ? "Premium" : "Member";
 
-  // Fetch user services from Firestore
-  const fetchUserServices = async () => {
+  // Real-time Fetch from Firestore
+  useEffect(() => {
     if (!session?.user?.email) {
       setLoading(false);
       return;
     }
 
-    try {
-      const q = query(
-        collection(db, "services"),
-        where("userEmail", "==", session.user.email)
-      );
-      
-      const querySnapshot = await getDocs(q);
+    // Connect to the "service" collection where the user's bookings are saved
+    const q = query(
+      collection(db, "services"),
+      where("userEmail", "==", session.user.email)
+    );
+    
+    // onSnapshot listens for real-time changes (e.g., admin accepting a booking)
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const upcoming: any[] = [];
       const history: any[] = [];
 
-      querySnapshot.forEach((doc) => {
-        const data:any = { id: doc.id, ...doc.data() };
-        if (data.status === "Completed") {
+      querySnapshot.forEach((document) => {
+        const data: any = { id: document.id, ...document.data() };
+        const status = data.status?.toLowerCase() || "pending";
+        
+        if (status === "completed") {
           history.push(data);
         } else {
           upcoming.push(data);
         }
       });
 
-      // Sort by date descending (rough sort)
-      history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      // Sort by newest first
+      history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      upcoming.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setUpcomingServices(upcoming);
       setHistoryServices(history);
-    } catch (error) {
-      console.error("Error fetching services:", error);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, (error) => {
+      console.error("Error fetching real-time services:", error);
+      setLoading(false);
+    });
 
-  useEffect(() => {
-    fetchUserServices();
+    // Cleanup the listener when the component unmounts
+    return () => unsubscribe();
   }, [session]);
 
   // Handle Marking as Complete & Uploading Image
@@ -89,10 +90,9 @@ export default function MembershipDashboard({ session }: { session: any }) {
         completedAt: new Date().toISOString(),
       });
 
-      // 3. Close modal and refresh data
+      // 3. Close modal (real-time listener will automatically move it to history)
       setSelectedService(null);
       setImageFile(null);
-      await fetchUserServices();
 
     } catch (error) {
       console.error("Error updating service:", error);
@@ -100,6 +100,14 @@ export default function MembershipDashboard({ session }: { session: any }) {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  // Helper for status styling
+  const getStatusStyle = (status: string) => {
+    const s = status?.toLowerCase() || 'pending';
+    if (s === 'accepted') return 'text-green-400 border-green-400/30 bg-green-400/10';
+    if (s === 'rejected') return 'text-red-400 border-red-400/30 bg-red-400/10';
+    return 'text-amber-400 border-amber-400/30 bg-amber-400/10';
   };
 
   if (loading) {
@@ -148,7 +156,7 @@ export default function MembershipDashboard({ session }: { session: any }) {
               <Link href="/book" className="w-full bg-amber-500 hover:bg-amber-600 text-stone-950 text-center font-bold py-3 text-xs uppercase tracking-widest transition">
                 Book New Session
               </Link>
-              <Link href="/settings" className="w-full bg-stone-950 hover:bg-stone-800 border border-stone-800 text-stone-300 text-center font-medium py-3 text-xs uppercase tracking-widest transition">
+              <Link href="/profile" className="w-full bg-stone-950 hover:bg-stone-800 border border-stone-800 text-stone-300 text-center font-medium py-3 text-xs uppercase tracking-widest transition">
                 Manage Profile
               </Link>
             </div>
@@ -172,36 +180,51 @@ export default function MembershipDashboard({ session }: { session: any }) {
             </div>
           </div>
 
-          {/* Upcoming Appointments */}
+          {/* Active Appointments */}
           <div className="bg-stone-900 border border-stone-800 p-6 md:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none" />
             
             <h3 className="text-xs uppercase tracking-widest text-stone-400 mb-6 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" /> Pending Appointments
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" /> Active Appointments
             </h3>
             
             {upcomingServices.length === 0 ? (
-              <p className="text-sm text-stone-500 font-light italic">No pending appointments.</p>
+              <p className="text-sm text-stone-500 font-light italic">No active appointments.</p>
             ) : (
               <div className="space-y-6">
                 {upcomingServices.map((service) => (
                   <div key={service.id} className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-stone-800/50 last:border-0 last:pb-0">
                     <div>
-                      <h4 className="font-serif text-2xl text-stone-100 mb-2">{service.serviceName || "Service"}</h4>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="font-serif text-2xl text-stone-100">{service.serviceName || "Service"}</h4>
+                        <span className={`px-2 py-1 text-[9px] uppercase tracking-widest font-bold border ${getStatusStyle(service.status)}`}>
+                          {service.status || "Pending"}
+                        </span>
+                      </div>
+                      
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-stone-400">
                         <span className="flex items-center gap-2"><FiCalendar className="text-amber-500" /> {service.date}</span>
                         <span className="flex items-center gap-2"><FiClock className="text-amber-500" /> {service.time}</span>
-                        <span className="flex items-center gap-2 uppercase text-[10px]"><FiMapPin className="text-amber-500" /> {service.bookingLocation === "home" ? "House Call" : "Studio"}</span>
+                        <span className="flex items-center gap-2 uppercase text-[10px]">
+                          <FiMapPin className="text-amber-500" /> 
+                          {service.bookingLocation === "home" ? "House Call" : "Studio"}
+                        </span>
                       </div>
                     </div>
                     
                     <div className="flex gap-3">
-                      <button 
-                        onClick={() => setSelectedService(service)}
-                        className="px-4 py-2 bg-stone-950 border border-amber-500/50 text-amber-500 text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-stone-950 transition flex items-center gap-2"
-                      >
-                        <FiCheckCircle size={14} /> Mark Completed
-                      </button>
+                      {service.status?.toLowerCase() === "rejected" ? (
+                         <div className="px-4 py-2 bg-red-950/30 border border-red-500/20 text-red-400 text-[10px] uppercase tracking-widest flex items-center gap-2">
+                           <FiInfo size={14} /> Contact Admin
+                         </div>
+                      ) : (
+                        <button 
+                          onClick={() => setSelectedService(service)}
+                          className="px-4 py-2 bg-stone-950 border border-amber-500/50 text-amber-500 text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-stone-950 transition flex items-center gap-2"
+                        >
+                          <FiCheckCircle size={14} /> Mark Completed
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

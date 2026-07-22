@@ -35,13 +35,18 @@ export default function Navbar() {
   // Mobile Menu State
   const [navOpen, setNavOpen] = useState(false);
 
+const isAdmin = session?.user?.email === "iboyibright1@gmail.com";
   // Dynamic Navigation Items
   const navItems: NavItem[] = [
     { name: "Home", url: "/" },
     { name: "Gallery", url: "/gallery" },
     { name: "About", url: "/about" },
+
     ...(!session ? [{ name: "Join Club", url: "/signin" }] : []),
-    ...(session ? [{ name: "Membership", url: "/membership" }] : []), // Changed to /membership (assuming logged-in users shouldn't go to /signup)
+  // 2. Regular Users: Logged IN, but NOT Admin
+  ...(session && !isAdmin ? [{ name: "Membership", url: "/membership" }] : []),
+  // 3. Admins: Logged IN and IS Admin
+  ...(session && isAdmin ? [{ name: "Admin", url: "/admin" }] : []),
   ];
 
   return (
@@ -112,7 +117,7 @@ export default function Navbar() {
                   <Link href="/profile" className="w-full">Profile</Link>
                 </MenuItem>
                 <MenuItem onClick={handleClose}>
-                  <Link href="/setting" className="w-full">Settings</Link>
+                  {/* <Link href="/setting" className="w-full">Settings</Link> */}
                 </MenuItem>
                 <MenuItem onClick={() => { handleClose(); signOut(); }}>
                   <span className="w-full text-red-500">Sign Out</span>
