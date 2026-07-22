@@ -1,68 +1,160 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 export default function AnimatedGallery() {
-  // Mock data with high-quality placeholder images
+  const [activeFilter, setActiveFilter] = useState("all");
+
   const galleryItems = [
+    // --- SHOP VIEW IMAGES ---
+    // {
+    //   id: "shop-1",
+    //   title: "Main Lounge & Waiting Area",
+    //   category: "Shop View",
+    //   filterCategory: "shop",
+    //   image: "/shopone.jpeg",
+    // },
+    // {
+    //   id: "shop-2",
+    //   title: "Master Barber Stations",
+    //   category: "Shop View",
+    //   filterCategory: "shop",
+    //   image: "/shoptwo.jpeg",
+    // },
     {
-      id: 1,
+      id: "shop-3",
+      title: "Master Barber Stations",
+      category: "Shop View",
+      filterCategory: "shop",
+      image: "/shopthree.jpeg",
+    },
+    {
+      id: "shop-4",
+      title: "Spa & Facial Sanctuary",
+      category: "Shop View",
+      filterCategory: "shop",
+      image: "/shopfour.jpeg",
+    },
+    {
+      id: "shop-5",
+      title: "Grooming & Detailing Zone",
+      category: "Shop View",
+      filterCategory: "shop",
+      image: "/shopfive.jpeg",
+    },
+    // {
+    //   id: "shop-6",
+    //   title: "Luxury Wash & Therapy Bar",
+    //   category: "Shop View",
+    //   filterCategory: "shop",
+    //   image: "/shopsix.png",
+    // },
+
+    // --- OUR WORK IMAGES ---
+    {
+      id: "work-1",
       title: "Signature Fade",
       category: "Haircut",
+      filterCategory: "work",
       image: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=800&auto=format&fit=crop",
     },
     {
-      id: 2,
+      id: "work-2",
       title: "Executive Grooming",
       category: "Beard & Hot Towel",
+      filterCategory: "work",
       image: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=800&auto=format&fit=crop",
     },
     {
-      id: 3,
+      id: "work-3",
       title: "Modern Classic",
       category: "Styling",
+      filterCategory: "work",
       image: "https://images.unsplash.com/photo-1512496015851-a1cbfc38d011?q=80&w=800&auto=format&fit=crop",
     },
     {
-      id: 4,
+      id: "work-4",
       title: "VIP House Call",
       category: "Home Service",
+      filterCategory: "work",
       image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=800&auto=format&fit=crop",
     },
     {
-      id: 5,
+      id: "work-5",
       title: "Precision Line-up",
       category: "Detailing",
+      filterCategory: "work",
       image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=800&auto=format&fit=crop",
     },
     {
-      id: 6,
+      id: "work-6",
       title: "The Royal Treatment",
       category: "Full Package",
+      filterCategory: "work",
       image: "https://images.unsplash.com/photo-1532710093739-9470acff878b?q=80&w=800&auto=format&fit=crop",
     },
   ];
+
+  // Filter items based on active tab
+  const filteredItems = activeFilter === "all" 
+    ? galleryItems 
+    : galleryItems.filter((item) => item.filterCategory === activeFilter);
 
   return (
     <section className="min-h-screen bg-stone-950 py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         
         {/* Header Section */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <Link href="/" className="text-xs font-bold tracking-widest text-amber-400 uppercase block mb-3 hover:text-amber-300 transition">
             ← Back to Home
           </Link>
           <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-wide uppercase text-stone-100">
-            Our Work
+            Gallery & Studio View
           </h2>
           <p className="text-sm text-stone-400 font-light mt-4 max-w-xl mx-auto">
-            A showcase of premium cuts, detailed styling, and executive grooming sessions.
+            Explore our state-of-the-art studio lounge atmosphere alongside a showcase of our finest cuts and spa treatments.
           </p>
         </div>
 
+        {/* Filter Navigation Tabs */}
+        <div className="flex justify-center items-center gap-3 mb-12 flex-wrap">
+          <button
+            onClick={() => setActiveFilter("all")}
+            className={`px-6 py-2.5 text-xs uppercase tracking-widest font-semibold transition-all duration-300 border ${
+              activeFilter === "all"
+                ? "border-amber-400 bg-amber-500 text-stone-950 font-bold"
+                : "border-stone-800 bg-stone-900/50 text-stone-400 hover:border-stone-700 hover:text-stone-200"
+            }`}
+          >
+            All Showcase
+          </button>
+          <button
+            onClick={() => setActiveFilter("shop")}
+            className={`px-6 py-2.5 text-xs uppercase tracking-widest font-semibold transition-all duration-300 border ${
+              activeFilter === "shop"
+                ? "border-amber-400 bg-amber-500 text-stone-950 font-bold"
+                : "border-stone-800 bg-stone-900/50 text-stone-400 hover:border-stone-700 hover:text-stone-200"
+            }`}
+          >
+            Shop View & Atmosphere
+          </button>
+          <button
+            onClick={() => setActiveFilter("work")}
+            className={`px-6 py-2.5 text-xs uppercase tracking-widest font-semibold transition-all duration-300 border ${
+              activeFilter === "work"
+                ? "border-amber-400 bg-amber-500 text-stone-950 font-bold"
+                : "border-stone-800 bg-stone-900/50 text-stone-400 hover:border-stone-700 hover:text-stone-200"
+            }`}
+          >
+            Haircut & Grooming
+          </button>
+        </div>
+
         {/* Gallery Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {galleryItems.map((item) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
+          {filteredItems.map((item) => (
             <div 
               key={item.id} 
               className="group relative h-[400px] w-full overflow-hidden bg-stone-900 border border-stone-800/80 cursor-pointer"

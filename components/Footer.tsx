@@ -9,9 +9,9 @@ export default function Footer() {
   ];
 
   const socials = [
-    { name: "Instagram", href: "https://instagram.com" },
-    { name: "Facebook", href: "https://facebook.com" },
-    { name: "TikTok", href: "https://tiktok.com" },
+    { name: "Instagram", href: "https://www.instagram.com/jaybliz_cutz?igsh=cmRoNHZ4ZHRjamxk&utm_source=qr" },
+    // { name: "Facebook", href: "https://facebook.com" },
+    { name: "TikTok", href: "https://www.tiktok.com/@jaybliz0?_r=1&_t=ZS-98FNv2j9gQM" },
   ];
 
   return (
@@ -54,16 +54,16 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 font-light text-stone-300">
               <li className="flex justify-between md:justify-start gap-4">
-                <span className="w-20 text-stone-500">Mon – Fri:</span>
-                <span>9:00 AM – 8:00 PM</span>
+                <span className="w-20 text-stone-500">Mon – Sat:</span>
+                <span>9:00 AM – 9:00 PM</span>
               </li>
-              <li className="flex justify-between md:justify-start gap-4">
+              {/* <li className="flex justify-between md:justify-start gap-4">
                 <span className="w-20 text-stone-500">Sat:</span>
                 <span>8:00 AM – 6:00 PM</span>
-              </li>
+              </li> */}
               <li className="flex justify-between md:justify-start gap-4">
                 <span className="w-20 text-stone-500">Sun:</span>
-                <span className="text-amber-500/80 font-medium">Closed</span>
+                <span className="text-amber-500/80 font-medium">12:00 AM – 9:00 PM</span>
               </li>
             </ul>
           </div>

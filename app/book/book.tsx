@@ -1,4 +1,5 @@
 "use client";
+
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import Link from 'next/link';
@@ -10,26 +11,34 @@ import { FiLoader } from 'react-icons/fi';
 export default function BookService({ session }: { session: any }) {
   const [submittedData, setSubmittedData] = useState<any>(null);
 
+  // Services list with Home Service specifically assigned to Haircut
   const services = [
-    { id: "s1", name: "Signature Haircut", price: 5000, type: "Studio" },
-    { id: "s2", name: "Beard Grooming & Shape", price: 5000, type: "Studio" },
-    { id: "s3", name: "Royal Hot Towel Shave", price: 5000, type: "Studio" },
-    { id: "sp2", name: "Scalp Therapy", price: 5000, type: "Spa" },
-    { id: "h1", name: "VIP House Call", price: 7000, type: "Home Service" },
-    { id: "h2", name: "Full Home Service Package", price: 10000, type: "Home Service" },
+    { id: "s1", name: "Haircut (In-Studio)", price: 5000, type: "Hair", isHomeService: false },
+    { id: "s1_home", name: "Haircut (Home Service)", price: 10000, type: "Hair", startingAt: true, isHomeService: true },
+    { id: "s2", name: "Washing and Haircut", price: 7000, type: "Hair", isHomeService: false },
+    { id: "s3", name: "Hair Tint", price: 15000, type: "Hair", startingAt: true, isHomeService: false },
+    { id: "s4", name: "Braids", price: 10000, type: "Hair", startingAt: true, isHomeService: false },
+    { id: "s5", name: "Tattoos", price: 20000, type: "Body Art", startingAt: true, isHomeService: false },
+    { id: "s6", name: "Regular Pedicure", price: 12000, type: "Nail Care", isHomeService: false },
+    { id: "s7", name: "Deluxe Pedicure", price: 15000, type: "Nail Care", isHomeService: false },
+    { id: "s8", name: "Manicure", price: 7000, type: "Nail Care", isHomeService: false },
+    { id: "s9", name: "Facial Treatment", price: 15000, type: "Skincare", isHomeService: false },
+    { id: "s10", name: "Dermaplaning Facial Treatment", price: 20000, type: "Skincare", isHomeService: false },
   ];
 
   const timeSlots = ["09:00 AM", "11:00 AM", "01:00 PM", "03:00 PM", "05:00 PM", "07:00 PM"];
 
   // Yup Validation Schema
   const bookingSchema = Yup.object().shape({
-    bookingLocation: Yup.string().oneOf(["studio", "home"]).required(),
     selectedService: Yup.string().required("Please select a service"),
     selectedDate: Yup.string().required("Please select a date"),
     selectedTime: Yup.string().required("Please select a time slot"),
-    address: Yup.string().when("bookingLocation", {
-      is: "home",
-      then: (schema) => schema.required("Address is required for house calls"),
+    address: Yup.string().when("selectedService", {
+      is: (val: string) => {
+        const selected = services.find((s) => s.id === val);
+        return selected?.isHomeService === true;
+      },
+      then: (schema) => schema.required("Address is required for home service haircut"),
       otherwise: (schema) => schema.notRequired(),
     }),
   });
@@ -47,7 +56,7 @@ export default function BookService({ session }: { session: any }) {
             Book An Appointment
           </h1>
           <p className="text-sm text-stone-400 font-light mt-2">
-            Select a service below. You can visit our studio or book a house call to your home or office.
+            Select a service below to reserve your slot at Jaybliz Studio & Spa.
           </p>
         </div>
 
@@ -62,7 +71,7 @@ export default function BookService({ session }: { session: any }) {
             <h2 className="font-serif text-2xl font-bold tracking-wide uppercase">Appointment Confirmed</h2>
             <p className="text-sm text-stone-400 font-light leading-relaxed">
               Your booking for <span className="text-stone-200 font-medium">{submittedData.serviceName}</span> is set for <span className="text-stone-200 font-medium">{submittedData.date}</span> at <span className="text-stone-200 font-medium">{submittedData.time}</span>.
-              {submittedData.bookingLocation === "home" && (
+              {submittedData.address && (
                 <span className="block mt-3 p-3 bg-stone-950 border border-stone-800 rounded-sm text-amber-400 font-normal">
                   📍 {submittedData.address}
                 </span>
@@ -79,7 +88,6 @@ export default function BookService({ session }: { session: any }) {
           /* FORMIK FORM FLOW */
           <Formik
             initialValues={{
-              bookingLocation: "studio" as "studio" | "home",
               selectedService: "",
               selectedDate: "",
               selectedTime: "",
@@ -88,37 +96,31 @@ export default function BookService({ session }: { session: any }) {
             validationSchema={bookingSchema}
             onSubmit={async (values, { setSubmitting, resetForm }) => {
               try {
-                // Find service details to calculate pricing correctly
                 const activeServiceObj = services.find((s) => s.id === values.selectedService);
                 const basePrice = activeServiceObj ? activeServiceObj.price : 0;
-                const transportFee = values.bookingLocation === "home" ? 2000 : 0;
-                const totalPrice = basePrice + transportFee;
 
                 // 1. Submit to Firestore inside 'services' collection
                 await addDoc(collection(db, "services"), {
                   userEmail: session?.user?.email || "guest",
                   userName: session?.user?.name || "Guest",
-                  bookingLocation: values.bookingLocation,
                   serviceId: values.selectedService,
                   serviceName: activeServiceObj?.name,
                   serviceType: activeServiceObj?.type,
+                  isHomeService: !!activeServiceObj?.isHomeService,
                   date: values.selectedDate,
                   time: values.selectedTime,
-                  address: values.bookingLocation === "home" ? values.address : null,
-                  basePrice: basePrice,
-                  transportFee: transportFee,
-                  totalPrice: totalPrice,
-                  status: "Pending", // Default status
+                  address: activeServiceObj?.isHomeService ? values.address : null,
+                  totalPrice: basePrice,
+                  status: "Pending",
                   createdAt: new Date().toISOString(),
                 });
 
-                // 2. Setup success state data before wiping form
+                // 2. Setup success state data before resetting form
                 setSubmittedData({
                   serviceName: activeServiceObj?.name,
                   date: values.selectedDate,
                   time: values.selectedTime,
-                  bookingLocation: values.bookingLocation,
-                  address: values.address,
+                  address: activeServiceObj?.isHomeService ? values.address : null,
                 });
 
                 // 3. Reset form
@@ -132,59 +134,20 @@ export default function BookService({ session }: { session: any }) {
             }}
           >
             {({ values, setFieldValue, isSubmitting }) => {
-              // Derived values for the UI
-              const filteredServices = services.filter((s) => 
-                values.bookingLocation === "home" ? s.type === "Home Service" : s.type !== "Home Service"
-              );
               const activeServiceObj = services.find((s) => s.id === values.selectedService);
-              const basePrice = activeServiceObj ? activeServiceObj.price : 0;
-              const transportFee = values.bookingLocation === "home" ? 2000 : 0;
-              const totalPrice = basePrice + transportFee;
+              const totalPrice = activeServiceObj ? activeServiceObj.price : 0;
 
               return (
                 <Form className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2 space-y-8 bg-stone-900/40 border border-stone-900 p-6 md:p-8">
                     
-                    {/* LOCATION TOGGLE */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-amber-400 mb-3">
-                        1. Select Location
-                      </label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <button
-                          type="button"
-                          onClick={() => { 
-                            setFieldValue("bookingLocation", "studio"); 
-                            setFieldValue("selectedService", ""); 
-                          }}
-                          className={`py-4 text-center text-xs tracking-widest uppercase font-semibold border transition ${
-                            values.bookingLocation === "studio" ? "border-amber-400 bg-amber-500/5 text-white" : "border-stone-800 bg-stone-950/50 text-stone-400"
-                          }`}
-                        >
-                          🏠 In-Studio
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { 
-                            setFieldValue("bookingLocation", "home"); 
-                            setFieldValue("selectedService", ""); 
-                          }}
-                          className={`py-4 text-center text-xs tracking-widest uppercase font-semibold border transition ${
-                            values.bookingLocation === "home" ? "border-amber-400 bg-amber-500/5 text-white" : "border-stone-800 bg-stone-950/50 text-stone-400"
-                          }`}
-                        >
-                          🚗 House Call
-                        </button>
-                      </div>
-                    </div>
-
                     {/* SERVICES LIST */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-amber-400 mb-4">
-                        2. Select Service
+                        1. Select Service
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {filteredServices.map((service) => (
+                        {services.map((service) => (
                           <button
                             key={service.id}
                             type="button"
@@ -195,18 +158,20 @@ export default function BookService({ session }: { session: any }) {
                           >
                             <span className="text-[10px] uppercase tracking-wider text-stone-500 font-bold">{service.type}</span>
                             <span className="font-medium text-sm block truncate w-full">{service.name}</span>
-                            <span className="font-mono text-xs text-amber-400 mt-1">₦{service.price.toLocaleString()}</span>
+                            <span className="font-mono text-xs text-amber-400 mt-1">
+                              ₦{service.price.toLocaleString()}{service.startingAt ? "+" : ""}
+                            </span>
                           </button>
                         ))}
                       </div>
                       <ErrorMessage name="selectedService" component="div" className="text-red-500 text-xs mt-2 font-medium" />
                     </div>
 
-                    {/* ADDRESS FIELD */}
-                    {values.bookingLocation === "home" && (
+                    {/* ADDRESS FIELD - Appears only for Home Service Haircut */}
+                    {activeServiceObj?.isHomeService && (
                       <div className="animate-fadeIn">
                         <label className="block text-xs font-bold uppercase tracking-widest text-amber-400 mb-2">
-                          Your Address
+                          Home Address for House Call
                         </label>
                         <Field
                           type="text"
@@ -222,7 +187,7 @@ export default function BookService({ session }: { session: any }) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-amber-400 mb-2">
-                          3. Select Date
+                          2. Select Date
                         </label>
                         <Field
                           type="date"
@@ -235,7 +200,7 @@ export default function BookService({ session }: { session: any }) {
 
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-amber-400 mb-2">
-                          4. Select Time
+                          3. Select Time
                         </label>
                         <Field
                           as="select"
@@ -262,12 +227,6 @@ export default function BookService({ session }: { session: any }) {
                       </h3>
                       
                       <div className="space-y-4 text-xs font-light">
-                        <div className="flex justify-between">
-                          <span className="text-stone-500">Location:</span>
-                          <span className="text-amber-400 font-medium uppercase tracking-wider text-[11px]">
-                            {values.bookingLocation === "home" ? "🏠 House Call" : "🏛️ Studio"}
-                          </span>
-                        </div>
                         <div className="flex justify-between items-start gap-4">
                           <span className="text-stone-500">Service:</span>
                           <span className="text-stone-200 font-normal text-right max-w-[150px] truncate">
@@ -275,19 +234,17 @@ export default function BookService({ session }: { session: any }) {
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-stone-500">Service Price:</span>
-                          <span className="text-stone-300 font-mono">₦{basePrice.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-stone-500">Transport Fee:</span>
-                          <span className="text-stone-300 font-mono">₦{transportFee.toLocaleString()}</span>
+                          <span className="text-stone-500">Location Type:</span>
+                          <span className="text-amber-400 font-medium uppercase tracking-wider text-[11px]">
+                            {activeServiceObj?.isHomeService ? "🚗 House Call" : "🏛️ In-Studio"}
+                          </span>
                         </div>
                       </div>
 
                       <div className="border-t border-stone-800 mt-6 pt-4 flex justify-between items-end">
                         <span className="text-xs font-bold uppercase tracking-wider text-stone-400">Total Price</span>
                         <span className="font-mono text-xl text-amber-400 font-semibold">
-                          ₦{totalPrice.toLocaleString()}
+                          ₦{totalPrice.toLocaleString()}{activeServiceObj?.startingAt ? "+" : ""}
                         </span>
                       </div>
                     </div>
