@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { FiCalendar, FiClock, FiStar, FiAward, FiMapPin, FiChevronRight, FiUpload, FiX, FiCheckCircle, FiInfo } from "react-icons/fi";
+import { FiCalendar, FiClock, FiStar, FiAward, FiMapPin, FiChevronRight, FiUpload, FiX, FiCheckCircle, FiInfo, FiCreditCard } from "react-icons/fi";
 import { collection, query, where, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/config/firebase"; 
@@ -12,15 +12,27 @@ export default function MembershipDashboard({ session }: { session: any }) {
   const [upcomingServices, setUpcomingServices] = useState<any[]>([]);
   const [historyServices, setHistoryServices] = useState<any[]>([]);
   
-  // States for the completion/upload modal
+  // States for modals
   const [selectedService, setSelectedService] = useState<any | null>(null);
+  const [selectedPaymentService, setSelectedPaymentService] = useState<any | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   // Computed User Stats
   const totalVisits = historyServices.length;
-  const points = totalVisits * 100;
-  const currentTier = totalVisits >= 10 ? "Elite" : totalVisits >= 5 ? "Premium" : "Member";
+  
+  // Updated Tier Logic: Premium unlocked at 15 bookings, Elite at 30 bookings
+  const currentTier = totalVisits >= 30 ? "Elite" : totalVisits >= 15 ? "Premium" : "Member";
+  
+  // Calculate Points: 
+  // ₦1,000 to ₦15,000 = 2 points per transaction
+  // ₦15,000 and above = 5 points per transaction
+  const points = historyServices.reduce((sum, record) => {
+    const price = Number(record.totalPrice) || 0;
+    if (price >= 15000) return sum + 5;
+    if (price >= 1000) return sum + 2;
+    return sum;
+  }, 0);
 
   // Real-time Fetch from Firestore
   useEffect(() => {
@@ -29,13 +41,11 @@ export default function MembershipDashboard({ session }: { session: any }) {
       return;
     }
 
-    // Connect to the "service" collection where the user's bookings are saved
     const q = query(
       collection(db, "services"),
       where("userEmail", "==", session.user.email)
     );
     
-    // onSnapshot listens for real-time changes (e.g., admin accepting a booking)
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const upcoming: any[] = [];
       const history: any[] = [];
@@ -51,7 +61,6 @@ export default function MembershipDashboard({ session }: { session: any }) {
         }
       });
 
-      // Sort by newest first
       history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       upcoming.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -63,7 +72,6 @@ export default function MembershipDashboard({ session }: { session: any }) {
       setLoading(false);
     });
 
-    // Cleanup the listener when the component unmounts
     return () => unsubscribe();
   }, [session]);
 
@@ -75,14 +83,12 @@ export default function MembershipDashboard({ session }: { session: any }) {
     try {
       let imageUrl = null;
 
-      // 1. Upload image to Firebase Storage if selected
       if (imageFile) {
         const fileRef = ref(storage, `completed_services/${selectedService.id}_${imageFile.name}`);
         const snapshot = await uploadBytes(fileRef, imageFile);
         imageUrl = await getDownloadURL(snapshot.ref);
       }
 
-      // 2. Update Firestore document status and attach image URL
       const serviceDocRef = doc(db, "services", selectedService.id);
       await updateDoc(serviceDocRef, {
         status: "Completed",
@@ -90,10 +96,8 @@ export default function MembershipDashboard({ session }: { session: any }) {
         completedAt: new Date().toISOString(),
       });
 
-      // 3. Close modal (real-time listener will automatically move it to history)
       setSelectedService(null);
       setImageFile(null);
-
     } catch (error) {
       console.error("Error updating service:", error);
       alert("Failed to complete service. Please try again.");
@@ -102,10 +106,30 @@ export default function MembershipDashboard({ session }: { session: any }) {
     }
   };
 
-  // Helper for status styling
+  // Handle Payment Confirmation
+  const handleConfirmPayment = async () => {
+    if (!selectedPaymentService) return;
+    setIsUploading(true);
+
+    try {
+      const serviceDocRef = doc(db, "services", selectedPaymentService.id);
+      await updateDoc(serviceDocRef, {
+        isPaid: true,
+        paidAt: new Date().toISOString(),
+      });
+
+      setSelectedPaymentService(null);
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      alert("Payment confirmation failed. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const getStatusStyle = (status: string) => {
     const s = status?.toLowerCase() || 'pending';
-    if (s === 'accepted') return 'text-green-400 border-green-400/30 bg-green-400/10';
+    if (s === 'accepted' || s === 'confirmed' || s === 'paid') return 'text-green-400 border-green-400/30 bg-green-400/10';
     if (s === 'rejected') return 'text-red-400 border-red-400/30 bg-red-400/10';
     return 'text-amber-400 border-amber-400/30 bg-amber-400/10';
   };
@@ -146,9 +170,9 @@ export default function MembershipDashboard({ session }: { session: any }) {
                   <FiAward /> {currentTier}
                 </p>
               </div>
-              <Link href="#"  className="text-[10px] text-stone-100 border-b border-stone-100 hover:text-amber-400 hover:border-amber-400 transition-colors uppercase tracking-widest pb-0.5">
-                Upgrade
-              </Link>
+              <span className="text-[9px] text-stone-500 uppercase tracking-widest pb-0.5">
+                {totalVisits}/15 to Premium
+              </span>
             </div>
 
             {/* Action Buttons */}
@@ -170,7 +194,7 @@ export default function MembershipDashboard({ session }: { session: any }) {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="bg-stone-900 border border-stone-800 p-6 flex flex-col justify-center">
               <FiStar className="text-amber-500 text-xl mb-3" />
-              <span className="text-3xl font-serif text-stone-100 mb-1">{points}</span>
+              <span className="text-3xl font-serif text-stone-100 mb-1">{points.toLocaleString()}</span>
               <span className="text-[10px] uppercase tracking-widest text-stone-400">Loyalty Points</span>
             </div>
             <div className="bg-stone-900 border border-stone-800 p-6 flex flex-col justify-center">
@@ -192,42 +216,64 @@ export default function MembershipDashboard({ session }: { session: any }) {
               <p className="text-sm text-stone-500 font-light italic">No active appointments.</p>
             ) : (
               <div className="space-y-6">
-                {upcomingServices.map((service) => (
-                  <div key={service.id} className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-stone-800/50 last:border-0 last:pb-0">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-serif text-2xl text-stone-100">{service.serviceName || "Service"}</h4>
-                        <span className={`px-2 py-1 text-[9px] uppercase tracking-widest font-bold border ${getStatusStyle(service.status)}`}>
-                          {service.status || "Pending"}
-                        </span>
+                {upcomingServices.map((service) => {
+                  const s = service.status?.toLowerCase();
+                  const isApproved = s === "accepted" || s === "confirmed" || s === "paid";
+                  const isRejected = s === "rejected";
+                  
+                  // Hide "Pay Now" if already confirmed/approved by admin
+                  const needsPayment = !service.isPaid && !isApproved && s !== "rejected";
+
+                  return (
+                    <div key={service.id} className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-stone-800/50 last:border-0 last:pb-0">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="font-serif text-2xl text-stone-100">{service.serviceName || "Service"}</h4>
+                          <span className={`px-2 py-1 text-[9px] uppercase tracking-widest font-bold border ${getStatusStyle(service.status)}`}>
+                            {service.status || "Pending"}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-stone-400">
+                          <span className="flex items-center gap-2"><FiCalendar className="text-amber-500" /> {service.date}</span>
+                          <span className="flex items-center gap-2"><FiClock className="text-amber-500" /> {service.time}</span>
+                          <span className="flex items-center gap-2 uppercase text-[10px]">
+                            <FiMapPin className="text-amber-500" /> 
+                            {service.bookingLocation === "home" ? "House Call" : "Studio"}
+                          </span>
+                        </div>
                       </div>
                       
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-stone-400">
-                        <span className="flex items-center gap-2"><FiCalendar className="text-amber-500" /> {service.date}</span>
-                        <span className="flex items-center gap-2"><FiClock className="text-amber-500" /> {service.time}</span>
-                        <span className="flex items-center gap-2 uppercase text-[10px]">
-                          <FiMapPin className="text-amber-500" /> 
-                          {service.bookingLocation === "home" ? "House Call" : "Studio"}
-                        </span>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {needsPayment && (
+                          <button 
+                            onClick={() => setSelectedPaymentService(service)}
+                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-[10px] uppercase tracking-widest transition flex items-center gap-2 shadow-lg shadow-amber-500/10"
+                          >
+                            <FiCreditCard size={14} /> Pay Now
+                          </button>
+                        )}
+
+                        {isRejected ? (
+                           <div className="px-4 py-2 bg-red-950/30 border border-red-500/20 text-red-400 text-[10px] uppercase tracking-widest flex items-center gap-2">
+                             <FiInfo size={14} /> Contact Admin
+                           </div>
+                        ) : isApproved ? (
+                          <button 
+                            onClick={() => setSelectedService(service)}
+                            className="px-4 py-2 bg-stone-950 border border-amber-500/50 text-amber-500 text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-stone-950 transition flex items-center gap-2"
+                          >
+                            <FiCheckCircle size={14} /> Mark Completed
+                          </button>
+                        ) : (
+                          <div className="px-4 py-2 bg-stone-900/50 border border-stone-700/50 text-stone-500 text-[10px] uppercase tracking-widest flex items-center gap-2 cursor-not-allowed">
+                            <FiClock size={14} /> Pending Approval
+                          </div>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="flex gap-3">
-                      {service.status?.toLowerCase() === "rejected" ? (
-                         <div className="px-4 py-2 bg-red-950/30 border border-red-500/20 text-red-400 text-[10px] uppercase tracking-widest flex items-center gap-2">
-                           <FiInfo size={14} /> Contact Admin
-                         </div>
-                      ) : (
-                        <button 
-                          onClick={() => setSelectedService(service)}
-                          className="px-4 py-2 bg-stone-950 border border-amber-500/50 text-amber-500 text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-stone-950 transition flex items-center gap-2"
-                        >
-                          <FiCheckCircle size={14} /> Mark Completed
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -269,6 +315,48 @@ export default function MembershipDashboard({ session }: { session: any }) {
 
         </main>
       </div>
+
+      {/* --- PAYMENT MODAL --- */}
+      {selectedPaymentService && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/80 backdrop-blur-sm p-4">
+          <div className="bg-stone-900 border border-stone-800 w-full max-w-md p-6 relative animate-fadeIn shadow-2xl">
+            
+            <button 
+              onClick={() => setSelectedPaymentService(null)}
+              className="absolute top-4 right-4 text-stone-400 hover:text-stone-100"
+            >
+              <FiX size={20} />
+            </button>
+
+            <h3 className="font-serif text-xl text-stone-100 mb-2">Complete Payment</h3>
+            <p className="text-xs text-stone-400 tracking-widest uppercase mb-6 border-b border-stone-800 pb-4">
+              {selectedPaymentService.serviceName}
+            </p>
+
+            <div className="space-y-6">
+              <div className="bg-stone-950 border border-stone-800 p-4 flex justify-between items-center">
+                <span className="text-xs text-stone-400 uppercase tracking-widest">Total Amount</span>
+                <span className="text-xl font-serif text-amber-500">₦{(selectedPaymentService.totalPrice || 0).toLocaleString()}</span>
+              </div>
+
+              <button
+                onClick={handleConfirmPayment}
+                disabled={isUploading}
+                className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:bg-stone-800 disabled:text-stone-600 text-stone-950 font-bold py-3 text-xs uppercase tracking-widest transition"
+              >
+                {isUploading ? (
+                   <>
+                     <div className="w-4 h-4 border-2 border-stone-600 border-t-amber-500 rounded-full animate-spin" /> 
+                     Processing Payment...
+                   </>
+                ) : (
+                  "Simulate Successful Payment"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- COMPLETION MODAL --- */}
       {selectedService && (
