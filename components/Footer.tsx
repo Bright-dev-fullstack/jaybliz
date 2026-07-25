@@ -63,7 +63,7 @@ export default function Footer() {
               </li> */}
               <li className="flex justify-between md:justify-start gap-4">
                 <span className="w-20 text-stone-500">Sun:</span>
-                <span className="text-amber-500/80 font-medium">12:00 AM – 9:00 PM</span>
+                <span className="text-amber-500/80 font-medium">12:00 PM – 9:00 PM</span>
               </li>
             </ul>
           </div>

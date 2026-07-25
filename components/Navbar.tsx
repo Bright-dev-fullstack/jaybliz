@@ -1,14 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useId, useState } from "react";
 import { RiMenuLine } from "react-icons/ri";
 import { AiOutlineClose } from "react-icons/ai";
+import { FaCut } from "react-icons/fa";
 import { signOut, useSession } from "next-auth/react";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { Avatar } from "@mui/material";
+import { checkIsAdmin } from "@/app/utils/admin";
 
 interface NavItem {
   name: string;
@@ -35,18 +36,17 @@ export default function Navbar() {
   // Mobile Menu State
   const [navOpen, setNavOpen] = useState(false);
 
-const isAdmin = session?.user?.email === "iboyibright1@gmail.com";
+  // Check admin status using the utility function and environment variables
+  const isAdmin = checkIsAdmin(session?.user?.email);
+  
   // Dynamic Navigation Items
   const navItems: NavItem[] = [
     { name: "Home", url: "/" },
     { name: "Gallery", url: "/gallery" },
     { name: "About", url: "/about" },
-
     ...(!session ? [{ name: "Join Club", url: "/signin" }] : []),
-  // 2. Regular Users: Logged IN, but NOT Admin
-  ...(session && !isAdmin ? [{ name: "Membership", url: "/membership" }] : []),
-  // 3. Admins: Logged IN and IS Admin
-  ...(session && isAdmin ? [{ name: "Admin", url: "/admin" }] : []),
+    ...(session && !isAdmin ? [{ name: "Membership", url: "/membership" }] : []),
+    ...(session && isAdmin ? [{ name: "Admin", url: "/admin" }] : []),
   ];
 
   return (
@@ -54,14 +54,9 @@ const isAdmin = session?.user?.email === "iboyibright1@gmail.com";
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         
         {/* LEFT: Logo Section */}
-        <Link href="/" className="group flex items-center gap-3">
-          <div className="relative h-9 w-9 overflow-hidden">
-            <Image
-              src="/logos.png"
-              alt="Jaybliz logo"
-              fill
-              className="object-contain filter brightness-100 transition duration-300 group-hover:scale-105"
-            />
+        <Link href="/" className="group flex items-center gap-1">
+          <div className="flex h-9 w-9 items-center justify-center text-white group-hover:text-amber-400 transition-colors duration-200">
+            <FaCut className="w-7 h-6" />
           </div>
           <div className="flex flex-col tracking-wider uppercase">
             <span className="font-serif text-base font-bold text-stone-100 leading-none tracking-widest group-hover:text-amber-400 transition duration-200">
@@ -103,7 +98,7 @@ const isAdmin = session?.user?.email === "iboyibright1@gmail.com";
                 <Avatar 
                   alt={session.user?.name || "User"} 
                   src={session.user?.image || ""} 
-                  sx={{ width: 32, height: 32 }} // Slightly smaller to match header proportions
+                  sx={{ width: 32, height: 32 }}
                 />
               </button>
               <Menu
@@ -113,12 +108,11 @@ const isAdmin = session?.user?.email === "iboyibright1@gmail.com";
                 onClose={handleClose}
                 slotProps={{ list: { 'aria-labelledby': buttonId } }}
               >
-                <MenuItem onClick={handleClose}>
-                  <Link href="/profile" className="w-full">Profile</Link>
-                </MenuItem>
-                <MenuItem onClick={handleClose}>
-                  {/* <Link href="/setting" className="w-full">Settings</Link> */}
-                </MenuItem>
+                {!isAdmin && (
+                  <MenuItem onClick={handleClose}>
+                    <Link href="/profile" className="w-full">Profile</Link>
+                  </MenuItem>
+                )}
                 <MenuItem onClick={() => { handleClose(); signOut(); }}>
                   <span className="w-full text-red-500">Sign Out</span>
                 </MenuItem>
@@ -126,13 +120,15 @@ const isAdmin = session?.user?.email === "iboyibright1@gmail.com";
             </div>
           )}
 
-          {/* Elite Call-to-Action */}
-          <Link
-            href="/book"
-            className="max-md:hidden bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-5 py-2.5 rounded-none transition duration-300 uppercase tracking-widest text-[11px] font-sans"
-          >
-            Reserve Slot
-          </Link>
+          {/* Elite Call-to-Action (Hidden for Admin) */}
+          {!isAdmin && (
+            <Link
+              href="/book"
+              className="max-md:hidden bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-5 py-2.5 rounded-none transition duration-300 uppercase tracking-widest text-[11px] font-sans"
+            >
+              Reserve Slot
+            </Link>
+          )}
 
           {/* Mobile Menu Toggle Trigger */}
           <button
@@ -162,13 +158,15 @@ const isAdmin = session?.user?.email === "iboyibright1@gmail.com";
               {item.name}
             </Link>
           ))}
-          <Link
-            href="/book"
-            onClick={() => setNavOpen(false)}
-            className="mt-4 bg-amber-500 hover:bg-amber-600 text-stone-950 text-center font-bold px-5 py-3 rounded-none transition duration-300 uppercase tracking-widest text-xs font-sans"
-          >
-            Reserve Slot
-          </Link>
+          {!isAdmin && (
+            <Link
+              href="/book"
+              onClick={() => setNavOpen(false)}
+              className="mt-4 bg-amber-500 hover:bg-amber-600 text-stone-950 text-center font-bold px-5 py-3 rounded-none transition duration-300 uppercase tracking-widest text-xs font-sans"
+            >
+              Reserve Slot
+            </Link>
+          )}
         </nav>
       </div>
     </header>

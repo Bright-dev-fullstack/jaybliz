@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+
 export default function Home() {
   const studioServices = [
     {
@@ -107,7 +108,7 @@ export default function Home() {
             <Link href="/book" className="bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-10 py-4 rounded-none transition duration-300 uppercase tracking-widest text-xs flex items-center justify-center shadow-lg">
               Book Appointment
             </Link>
-            <Link href="/book" className="border border-stone-700 hover:border-amber-400 hover:bg-amber-400/5 text-stone-300 font-medium px-10 py-4 rounded-none transition duration-300 uppercase tracking-widest text-xs flex items-center justify-center backdrop-blur-sm">
+            <Link href="/gallery" className="border border-stone-700 hover:border-amber-400 hover:bg-amber-400/5 text-stone-300 font-medium px-10 py-4 rounded-none transition duration-300 uppercase tracking-widest text-xs flex items-center justify-center backdrop-blur-sm">
               Explore Services
             </Link>
           </div>
