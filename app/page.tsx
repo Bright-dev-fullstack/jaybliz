@@ -109,7 +109,7 @@ export default function Home() {
               Book Appointment
             </Link>
             <Link href="/gallery" className="border border-stone-700 hover:border-amber-400 hover:bg-amber-400/5 text-stone-300 font-medium px-10 py-4 rounded-none transition duration-300 uppercase tracking-widest text-xs flex items-center justify-center backdrop-blur-sm">
-              Explore Services
+              Explore Gallery
             </Link>
           </div>
         </div>
@@ -249,7 +249,7 @@ export default function Home() {
             &ldquo;Jaybliz Cut completely changes what it means to go to a barbershop. The haircut is pristine and sharp, but slipping away for a dermaplaning facial treatment and pedicure is an absolute luxury.&rdquo;
           </p>
           <div className="w-6 h-[1px] bg-amber-400/30 mx-auto mb-4"></div>
-          <span className="text-[10px] tracking-[0.2em] font-bold uppercase text-stone-400 block">Marcus V. — Verified Guest</span>
+          <span className="text-[10px] tracking-[0.2em] font-bold uppercase text-stone-400 block">Anonymous  — Verified Guest</span>
         </div>
       </section>
 
