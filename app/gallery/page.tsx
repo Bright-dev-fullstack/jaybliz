@@ -98,9 +98,9 @@ export default function AnimatedGallery() {
 
               {/* Text content that slides up smoothly */}
               <div className="absolute inset-0 flex flex-col justify-end p-6 z-20">
-                <h3 className="font-serif text-2xl font-semibold text-stone-100 tracking-wide transform transition-transform duration-500 group-hover:-translate-y-1">
+                {/* <h3 className="font-serif text-2xl font-semibold text-stone-100 tracking-wide transform transition-transform duration-500 group-hover:-translate-y-1">
                   {item.title}
-                </h3>
+                </h3> */}
                 
                 {/* Expanding Amber Accent Line */}
                 <div className="w-10 h-[2px] bg-amber-400 mt-3 transition-all duration-500 group-hover:w-full" />
