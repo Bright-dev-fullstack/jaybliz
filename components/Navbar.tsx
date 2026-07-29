@@ -47,6 +47,7 @@ export default function Navbar() {
     ...(!session ? [{ name: "Join Club", url: "/signin" }] : []),
     ...(session && !isAdmin ? [{ name: "Membership", url: "/membership" }] : []),
     ...(session && isAdmin ? [{ name: "Admin", url: "/admin" }] : []),
+    ...(session && isAdmin ? [{ name: "chat", url: "/admin/chat" }] : []),
   ];
 
   return (

@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SigninOptons from "@/components/SigninOption";
+import ChatWidget from "@/components/Chat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
         <SigninOptons>
         <Navbar/>
         {children}
+        <ChatWidget/>
         <Footer/>
         </SigninOptons>
         </body>
