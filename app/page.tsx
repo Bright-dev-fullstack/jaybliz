@@ -24,7 +24,7 @@ export default function Home() {
     {
       name: "Hair Tint",
       desc: "Custom color transformation & conditioning treatment",
-      price: "₦15,000+",
+      price: "₦20,000+",
     },
     {
       name: "Braids",
