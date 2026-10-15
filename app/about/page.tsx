@@ -153,7 +153,7 @@ export default function About() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent opacity-60" />
             <div className="absolute bottom-4 left-4 right-4 z-20 bg-stone-950/90 backdrop-blur-md p-4 border border-stone-800">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400 block mb-1">Founder & Principal Stylist</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400 block mb-1">Head Barber</span>
               <p className="font-serif text-lg text-stone-100">Babalola Joshua Femi</p>
             </div>
           </div>
